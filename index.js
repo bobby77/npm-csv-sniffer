@@ -21,7 +21,7 @@
  */
 
 
-var fs = require('fs');
+var fs = require('fs'); 
 
 function getNewlineStr(sample) {
 	// Figures out what the most probable row delimiter is. 
