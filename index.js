@@ -477,7 +477,7 @@ function getTypes(parsedSample) {
 	// - Types considering all but the first row
 	// - Types considering only the first row
 
-    function getAccumulatedType(curValue, curType) {
+    function getAccumulatedTypeOld(curValue, curType) {
     	// Note: If curType is "integer", this function will return the actual type of
     	// curValue
     	if(curType == "string") return "string"; //can't get worse than string
@@ -492,7 +492,56 @@ function getTypes(parsedSample) {
     }
 
     function getAccumulatedTypeNew(curValue, curType) {
-    	return "myType";
+    	// Order of detection, from most to least constrained 
+    	// integer < zeroOne < float < boolean < date < string
+
+    	// Note: If curType is "integer", this function will return the actual type of
+    	// curValue
+    	if(curType.type == "string") return { type: "string", maxLength: Math.max(curType.maxLength, curValue.length) }; //can't get worse than string
+			
+			// check if it matches date pattern
+			//if((curType.type == null || curType.type == "date") && isDate(curValue)) return { type: "date", dateFormat: getDateFormat(curValue) };
+			
+			// check if boolean
+			//if((curType.type == null || curType.type == "bool") && isBool(curValue)) return { type: "bool" };
+
+			// see if we should fall back to string by seeing if this is a finite number
+			if(!isFinite(curValue)) return { type: "string", maxLength: curValue.length };
+
+			// see if we should fall back from int to float
+			if(curType.type == "float" || curValue%1 !== 0) return { type: "float", Math.max: max(curValue, curType.max) };
+
+			// check if 1/0
+			//if(curType.type == "oneZero" || (curValue == 1 || curValue ==0)) return { type: "oneZero" };
+			
+			// default: integer
+			return {type: "integer", max: curValue };
+    }
+
+    function isBool(value) {
+    	if (typeof value === 'boolean') { return true; }
+    	else if( typeof value === 'string') {
+	    	var s = value.toLowerCase();
+	    	isTrue  = (s === 'true'  || s === 'yes' || s === 'on'  || s === 'vrai' );
+	    	isFalse = (s === 'false' || s === 'no'  || s === 'off' || s === 'faux' );
+	    	return isTrue || isFalse;
+    	} else {
+    		return false;
+    	}
+    }
+
+    function toBool(value) {
+			if (typeof value === 'string') {
+        var s = value.toLowerCase();
+        return s === 'true' || s === 'yes' || s === 'on' || s === '1' || s === 'vrai';
+      } else {
+        return value === true || value === 1;
+      }
+    }
+
+    function isDate() {
+			// TO DO. use moment or simple Regex.
+			return true;
     }
 
     var firstValues = null; // used to calculate the all array in the end
@@ -500,8 +549,13 @@ function getTypes(parsedSample) {
     var tail = [];
     var all = null; // will be calculated in the end
 
+    var _method = 1;
+    var getAccumulatedType = (_method === 1) ? getAccumulatedTypeOld : getAccumulatedTypeNew;
+    var defaultType 			 = (_method === 1) ? "integer" : { type: null, "max": 0 }; 
+
     parsedSample && parsedSample.forEach(function(cols, i) {
     	if(i == 0) {
+
     		firstValues = cols;
     		cols.forEach(function(col, colIndex) {
     			first.push(getAccumulatedType(col, "integer"));
