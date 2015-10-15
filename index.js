@@ -491,6 +491,10 @@ function getTypes(parsedSample) {
 		return "integer";
     }
 
+    function getAccumulatedTypeNew(curValue, curType) {
+    	return "myType";
+    }
+
     var firstValues = null; // used to calculate the all array in the end
     var first = [];
     var tail = [];
